@@ -227,6 +227,56 @@ class KVExecutorTest : public Test {
     return kv_response.items();
   }
 
+  void CreateCompositeKey(const std::string& composite_key,
+                          const std::string& primary_key) {
+    KVRequest request;
+    request.set_cmd(KVRequest::CREATE_COMPOSITE_KEY);
+    request.set_composite_key(composite_key);
+    request.set_primary_key(primary_key);
+    std::string str;
+    request.SerializeToString(&str);
+    impl_->ExecuteData(str);
+  }
+
+  void DeleteCompositeKey(const std::string& composite_key) {
+    KVRequest request;
+    request.set_cmd(KVRequest::DELETE_COMPOSITE_KEY);
+    request.set_composite_key(composite_key);
+    std::string str;
+    request.SerializeToString(&str);
+    impl_->ExecuteData(str);
+  }
+
+  void UpdateCompositeKey(const std::string& old_composite_key,
+                          const std::string& new_composite_key) {
+    KVRequest request;
+    request.set_cmd(KVRequest::UPDATE_COMPOSITE_KEY);
+    request.set_old_composite_key(old_composite_key);
+    request.set_new_composite_key(new_composite_key);
+    std::string str;
+    request.SerializeToString(&str);
+    impl_->ExecuteData(str);
+  }
+
+  Items GetByCompositeKeyPrefix(const std::string& prefix) {
+    KVRequest request;
+    request.set_cmd(KVRequest::GET_BY_COMPOSITE_KEY_PREFIX);
+    request.set_composite_key_prefix(prefix);
+    std::string str;
+    if (!request.SerializeToString(&str)) {
+      return Items();
+    }
+    auto resp = impl_->ExecuteData(str);
+    if (resp == nullptr) {
+      return Items();
+    }
+    KVResponse kv_response;
+    if (!kv_response.ParseFromString(*resp)) {
+      return Items();
+    }
+    return kv_response.items();
+  }
+
  protected:
   Storage* storage_ptr_;
 
@@ -336,6 +386,60 @@ TEST_F(KVExecutorTest, SetValueWithVersion) {
     }
     EXPECT_THAT(GetHistory("test_key", 0, 2), EqualsProto(items));
   }
+}
+
+TEST_F(KVExecutorTest, CreateCompositeKey_HappyPath) {
+  // Primary key must exist before the executor will allow indexing.
+  ASSERT_EQ(Set("user_42", "alice"), 0);
+
+  CreateCompositeKey("ck1", "user_42");
+
+  Items result = GetByCompositeKeyPrefix("ck1");
+  ASSERT_EQ(result.item_size(), 1);
+  EXPECT_EQ(result.item(0).key(), "ck1");
+}
+
+TEST_F(KVExecutorTest, CreateCompositeKey_RejectsOrphan) {
+  // No primary key was set: the executor must refuse to index.
+  CreateCompositeKey("ck_orphan", "nonexistent_pk");
+
+  Items result = GetByCompositeKeyPrefix("ck_orphan");
+  EXPECT_EQ(result.item_size(), 0);
+}
+
+TEST_F(KVExecutorTest, DeleteCompositeKey_RemovesEntry) {
+  ASSERT_EQ(Set("user_42", "alice"), 0);
+  CreateCompositeKey("ck1", "user_42");
+  ASSERT_EQ(GetByCompositeKeyPrefix("ck1").item_size(), 1);
+
+  DeleteCompositeKey("ck1");
+  EXPECT_EQ(GetByCompositeKeyPrefix("ck1").item_size(), 0);
+}
+
+TEST_F(KVExecutorTest, UpdateCompositeKey_MovesEntry) {
+  ASSERT_EQ(Set("user_42", "alice"), 0);
+  CreateCompositeKey("ck_old", "user_42");
+
+  UpdateCompositeKey("ck_old", "ck_new");
+
+  EXPECT_EQ(GetByCompositeKeyPrefix("ck_old").item_size(), 0);
+  Items new_result = GetByCompositeKeyPrefix("ck_new");
+  ASSERT_EQ(new_result.item_size(), 1);
+  EXPECT_EQ(new_result.item(0).key(), "ck_new");
+}
+
+TEST_F(KVExecutorTest, GetByCompositeKeyPrefix_MultipleMatches) {
+  ASSERT_EQ(Set("user_1", "alice"), 0);
+  ASSERT_EQ(Set("user_2", "bob"), 0);
+
+  CreateCompositeKey("idx_a", "user_1");
+  CreateCompositeKey("idx_b", "user_2");
+  CreateCompositeKey("other_key", "user_1");
+
+  Items result = GetByCompositeKeyPrefix("idx_");
+  ASSERT_EQ(result.item_size(), 2);
+  EXPECT_EQ(result.item(0).key(), "idx_a");
+  EXPECT_EQ(result.item(1).key(), "idx_b");
 }
 
 }  // namespace

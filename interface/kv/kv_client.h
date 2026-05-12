@@ -60,6 +60,16 @@ class KVClient : public TransactionConstructor {
   std::unique_ptr<std::string> Get(const std::string& key);
   std::unique_ptr<std::string> GetRange(const std::string& min_key,
                                         const std::string& max_key);
+
+  // Composite key operations (secondary indexing). The encoded composite key
+  // and prefix strings are produced by the codec on the client side; the
+  // server treats them as opaque byte strings.
+  int CreateCompositeKey(const std::string& composite_key,
+                         const std::string& primary_key);
+  int DeleteCompositeKey(const std::string& composite_key);
+  int UpdateCompositeKey(const std::string& old_composite_key,
+                         const std::string& new_composite_key);
+  std::unique_ptr<Items> GetByCompositeKeyPrefix(const std::string& prefix);
 };
 
 }  // namespace resdb

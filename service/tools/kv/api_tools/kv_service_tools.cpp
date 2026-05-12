@@ -269,6 +269,46 @@ int main(int argc, char** argv) {
       printf("getrange value fail, min key = %s, max key = %s\n",
              min_key.c_str(), max_key.c_str());
     }
+  } else if (cmd == "create_composite_key") {
+    // --key = composite key, --value = primary key (must already exist).
+    if (key.empty() || value.empty()) {
+      ShowUsage();
+      return 0;
+    }
+    int ret = client.CreateCompositeKey(key, value);
+    printf("create_composite_key composite_key = %s, primary_key = %s, ret = %d\n",
+           key.c_str(), value.c_str(), ret);
+  } else if (cmd == "delete_composite_key") {
+    // --key = composite key.
+    if (key.empty()) {
+      ShowUsage();
+      return 0;
+    }
+    int ret = client.DeleteCompositeKey(key);
+    printf("delete_composite_key composite_key = %s, ret = %d\n",
+           key.c_str(), ret);
+  } else if (cmd == "update_composite_key") {
+    // --key = old composite key, --value = new composite key.
+    if (key.empty() || value.empty()) {
+      ShowUsage();
+      return 0;
+    }
+    int ret = client.UpdateCompositeKey(key, value);
+    printf("update_composite_key old = %s, new = %s, ret = %d\n",
+           key.c_str(), value.c_str(), ret);
+  } else if (cmd == "get_by_composite_key_prefix") {
+    // --key = composite key prefix.
+    if (key.empty()) {
+      ShowUsage();
+      return 0;
+    }
+    auto res = client.GetByCompositeKeyPrefix(key);
+    if (res != nullptr) {
+      printf("get_by_composite_key_prefix prefix = %s\n value = %s\n",
+             key.c_str(), res->DebugString().c_str());
+    } else {
+      printf("get_by_composite_key_prefix prefix = %s, fail\n", key.c_str());
+    }
   } else {
     ShowUsage();
   }

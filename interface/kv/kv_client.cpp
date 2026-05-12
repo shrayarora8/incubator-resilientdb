@@ -133,4 +133,43 @@ std::unique_ptr<Items> KVClient::GetKeyTopHistory(const std::string& key,
   return std::make_unique<Items>(response.items());
 }
 
+int KVClient::CreateCompositeKey(const std::string& composite_key,
+                                 const std::string& primary_key) {
+  KVRequest request;
+  request.set_cmd(KVRequest::CREATE_COMPOSITE_KEY);
+  request.set_composite_key(composite_key);
+  request.set_primary_key(primary_key);
+  return SendRequest(request);
+}
+
+int KVClient::DeleteCompositeKey(const std::string& composite_key) {
+  KVRequest request;
+  request.set_cmd(KVRequest::DELETE_COMPOSITE_KEY);
+  request.set_composite_key(composite_key);
+  return SendRequest(request);
+}
+
+int KVClient::UpdateCompositeKey(const std::string& old_composite_key,
+                                 const std::string& new_composite_key) {
+  KVRequest request;
+  request.set_cmd(KVRequest::UPDATE_COMPOSITE_KEY);
+  request.set_old_composite_key(old_composite_key);
+  request.set_new_composite_key(new_composite_key);
+  return SendRequest(request);
+}
+
+std::unique_ptr<Items> KVClient::GetByCompositeKeyPrefix(
+    const std::string& prefix) {
+  KVRequest request;
+  request.set_cmd(KVRequest::GET_BY_COMPOSITE_KEY_PREFIX);
+  request.set_composite_key_prefix(prefix);
+  KVResponse response;
+  int ret = SendRequest(request, &response);
+  if (ret != 0) {
+    LOG(ERROR) << "send request fail, ret:" << ret;
+    return nullptr;
+  }
+  return std::make_unique<Items>(response.items());
+}
+
 }  // namespace resdb

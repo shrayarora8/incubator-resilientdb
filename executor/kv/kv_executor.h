@@ -57,6 +57,16 @@ class KVExecutor : public TransactionManager {
                   Items* items);
   void GetTopHistory(const std::string& key, int top_number, Items* items);
 
+  // Composite key operations. Encoded keys are produced by the codec on the
+  // client side; the executor enforces invariants (e.g. primary key must
+  // exist on CREATE) and delegates the actual writes to storage.
+  bool CreateCompositeKey(const std::string& composite_key,
+                          const std::string& primary_key);
+  bool DeleteCompositeKey(const std::string& composite_key);
+  bool UpdateCompositeKey(const std::string& old_composite_key,
+                          const std::string& new_composite_key);
+  void GetByCompositeKeyPrefix(const std::string& prefix, Items* items);
+
  private:
   std::unique_ptr<TransactionManager> contract_manager_;
 };

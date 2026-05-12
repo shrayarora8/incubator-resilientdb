@@ -34,6 +34,10 @@ message KVRequest {
         GET_KEY_RANGE = 8;
         GET_HISTORY = 9;
         GET_TOP = 10;
+        CREATE_COMPOSITE_KEY = 11;
+        DELETE_COMPOSITE_KEY = 12;
+        GET_BY_COMPOSITE_KEY_PREFIX = 13;
+        UPDATE_COMPOSITE_KEY = 14;
     }
     CMD cmd = 1;
     string key = 2;
@@ -48,6 +52,13 @@ message KVRequest {
     // For top history
     int32 top_number = 9;
     bytes smart_contract_request = 10;
+    // For composite keys. Encoded by the codec on the client side; the server
+    // treats them as opaque byte strings.
+    bytes composite_key = 11;          // CREATE, DELETE
+    string primary_key = 12;           // CREATE: validated to exist before insert
+    bytes old_composite_key = 13;      // UPDATE
+    bytes new_composite_key = 14;      // UPDATE
+    bytes composite_key_prefix = 15;   // GET_BY_COMPOSITE_KEY_PREFIX
 }
 
 message ValueInfo {

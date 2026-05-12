@@ -71,6 +71,17 @@ std::unique_ptr<std::string> KVExecutor::ExecuteRequest(
   } else if (kv_request.cmd() == KVRequest::GET_TOP) {
     GetTopHistory(kv_request.key(), kv_request.top_number(),
                   kv_response.mutable_items());
+  } else if (kv_request.cmd() == KVRequest::CREATE_COMPOSITE_KEY) {
+    CreateCompositeKey(kv_request.composite_key(),
+                       kv_request.primary_key());
+  } else if (kv_request.cmd() == KVRequest::DELETE_COMPOSITE_KEY) {
+    DeleteCompositeKey(kv_request.composite_key());
+  } else if (kv_request.cmd() == KVRequest::UPDATE_COMPOSITE_KEY) {
+    UpdateCompositeKey(kv_request.old_composite_key(),
+                       kv_request.new_composite_key());
+  } else if (kv_request.cmd() == KVRequest::GET_BY_COMPOSITE_KEY_PREFIX) {
+    GetByCompositeKeyPrefix(kv_request.composite_key_prefix(),
+                            kv_response.mutable_items());
   } else if (!kv_request.smart_contract_request().empty()) {
     std::unique_ptr<std::string> resp =
         contract_manager_->ExecuteData(kv_request.smart_contract_request());
@@ -121,6 +132,17 @@ std::unique_ptr<std::string> KVExecutor::ExecuteData(
   } else if (kv_request.cmd() == KVRequest::GET_TOP) {
     GetTopHistory(kv_request.key(), kv_request.top_number(),
                   kv_response.mutable_items());
+  } else if (kv_request.cmd() == KVRequest::CREATE_COMPOSITE_KEY) {
+    CreateCompositeKey(kv_request.composite_key(),
+                       kv_request.primary_key());
+  } else if (kv_request.cmd() == KVRequest::DELETE_COMPOSITE_KEY) {
+    DeleteCompositeKey(kv_request.composite_key());
+  } else if (kv_request.cmd() == KVRequest::UPDATE_COMPOSITE_KEY) {
+    UpdateCompositeKey(kv_request.old_composite_key(),
+                       kv_request.new_composite_key());
+  } else if (kv_request.cmd() == KVRequest::GET_BY_COMPOSITE_KEY_PREFIX) {
+    GetByCompositeKeyPrefix(kv_request.composite_key_prefix(),
+                            kv_response.mutable_items());
   } else if (!kv_request.smart_contract_request().empty()) {
     std::unique_ptr<std::string> resp =
         contract_manager_->ExecuteData(kv_request.smart_contract_request());
@@ -199,6 +221,55 @@ void KVExecutor::GetTopHistory(const std::string& key, int top_number,
     item->set_key(key);
     item->mutable_value_info()->set_value(it.first);
     item->mutable_value_info()->set_version(it.second);
+  }
+}
+
+bool KVExecutor::CreateCompositeKey(const std::string& composite_key,
+                                    const std::string& primary_key) {
+  // Refuse to index a primary key that does not exist. Matches the existing
+  // Get() semantics: empty value is treated as "not found".
+  std::string value = storage_->GetValueWithSeq(primary_key, 0).first;
+  if (value.empty()) {
+    LOG(ERROR) << "CreateCompositeKey fail: primary key does not exist: "
+               << primary_key;
+    return false;
+  }
+  int ret = storage_->CreateCompositeKey(composite_key);
+  if (ret != 0) {
+    LOG(ERROR) << "CreateCompositeKey fail: storage returned " << ret;
+    return false;
+  }
+  return true;
+}
+
+bool KVExecutor::DeleteCompositeKey(const std::string& composite_key) {
+  int ret = storage_->DeleteCompositeKey(composite_key);
+  if (ret != 0) {
+    LOG(ERROR) << "DeleteCompositeKey fail: storage returned " << ret;
+    return false;
+  }
+  return true;
+}
+
+bool KVExecutor::UpdateCompositeKey(const std::string& old_composite_key,
+                                    const std::string& new_composite_key) {
+  int ret =
+      storage_->UpdateCompositeKey(old_composite_key, new_composite_key);
+  if (ret != 0) {
+    LOG(ERROR) << "UpdateCompositeKey fail: storage returned " << ret;
+    return false;
+  }
+  return true;
+}
+
+void KVExecutor::GetByCompositeKeyPrefix(const std::string& prefix,
+                                          Items* items) {
+  std::vector<std::string> results =
+      storage_->GetByCompositeKeyPrefix(prefix);
+  for (const auto& ck : results) {
+    Item* item = items->add_item();
+    item->set_key(ck);
+    // value_info left empty: composite keys store no value.
   }
 }
 
