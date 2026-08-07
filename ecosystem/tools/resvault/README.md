@@ -23,7 +23,7 @@ under the License.
     <a href="https://resilientdb.com"><img src="https://i.imgur.com/s4089K7.png" width="300" alt="resvault" /></a>
   </p>
   <br />
-  <p>
+  <!-- <p>
     <a href="https://github.com/ResilientApp/ResVault/releases/"><img alt="GitHub Release Date - Published_At" src="https://img.shields.io/github/release-date/ResilientApp/ResVault">
     </a>
     <a href="https://github.com/ResilientApp/ResVault/actions"><img alt="GitHub Workflow Status (with event)" src="https://img.shields.io/github/actions/workflow/status/ResilientApp/ResVault/release.yml">
@@ -36,12 +36,12 @@ under the License.
     </a>
     <a href="https://github.com/ResilientApp/ResVault/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/ResilientApp/ResVault">
     </a>
-  </p>
+  </p> -->
 </div>
 
 ## About
 
-ResVault is a Chrome extension that serves as a comprehensive wallet for [ResilientDB](https://resilientdb.com). ResilientDB is a High Throughput Yielding Permissioned Blockchain Fabric founded by [ExpoLab](https://expolab.org/) at [UC Davis](https://www.ucdavis.edu/) in 2018. ResilientDB advocates a system-centric design by adopting a multi-threaded architecture that encompasses deep pipelines. Further, ResilientDB separates the ordering of client transactions from their execution, which allows it to process messages out-of-order.
+ResVault is a Chrome extension that serves as a comprehensive wallet for [ResilientDB](https://resilientdb.com). ResilientDB is a High Throughput Yielding Permissioned Blockchain Fabric founded by ExpoLab at UC Davis in 2018. ResilientDB advocates a system-centric design, adopting a multi-threaded architecture with deep pipelines. Further, ResilientDB separates the ordering of client transactions from their execution, allowing it to process messages out of order.
 
 ## Features
 
